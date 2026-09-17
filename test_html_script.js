@@ -40,7 +40,9 @@ const elementIds = [
   "dropzone", "fileInput", "selectFileBtn", "loadedFileBadge", "loadedFileName", "removeFileBtn",
   "configText", "charCount", "loadSampleBtn", "clearInputBtn", "convertBtn",
   "optTag", "optDomain", "optMtu", "optNoKernelTun", "optWrapOutbounds",
-  "outputPre", "copyJsonBtn", "downloadJsonBtn",
+  "viewAllBtn", "viewUriBtn", "viewJsonBtn", "sectionUri", "sectionJson",
+  "outputUriPre", "copyUriBtn",
+  "outputJsonPre", "copyJsonBtn", "downloadJsonBtn",
   "messagesList", "toast", "toastText"
 ];
 
@@ -88,41 +90,73 @@ if (elements["messagesList"].innerHTML.includes("<script>")) {
 }
 console.log("  ✅ showError safely escapes error message!");
 
-sandbox.renderSuccess("<img src=x onerror=alert(1)>", { peers: [], interface: { privatekey: "k" } }, ["<script>warning</script>"]);
+sandbox.renderSuccess("<img src=x onerror=alert(1)>", { peers: [], interface: { privatekey: "k" } }, ["<script>warning</script>"], 1);
 if (elements["messagesList"].innerHTML.includes("<img src=x") || elements["messagesList"].innerHTML.includes("<script>")) {
   console.error("❌ renderSuccess allowed raw unescaped HTML injection!");
   process.exit(1);
 }
 console.log("  ✅ renderSuccess safely escapes filenames and warnings!");
 
-// 2. Test MTU UI Override
-console.log("\nTesting MTU UI Override:");
+// 2. Test MTU UI Override & Dual Output (JSON + WireGuard URI)
+console.log("\nTesting MTU UI Override & Dual Output (JSON + URI):");
 elements["configText"].value = `[Interface]
-PrivateKey = yAnz5TF+lXXJTr13wFwYxLzQv8n9v6p1Xy0Z1A2B3C4=
+PrivateKey = 8Mn46OZH7DTRrHPAejXiGZ1Ide/GCBawNt6NDHJpfU8=
 Address = 10.0.0.2/32
 MTU = 1380
 [Peer]
-PublicKey = bmXE4J8vgEz9dmypCYlhUSxDZITQqde6Set8TeQUuGs=
-Endpoint = 198.51.100.1:51820`;
+PublicKey = bwanSi8gvcFJkSBbC5K0ED/gZ7r8tNq8Twp3YqOigEQ=
+Endpoint = vip.jojo-data.com:46341`;
 
-elements["optMtu"].value = "1400"; // User typed 1400
+elements["optTag"].value = "owner";
+elements["optMtu"].value = "1420"; // User override
 
 sandbox.doConvert("test.conf");
 
-if (elements["optMtu"].value !== "1400") {
-  console.error(`❌ doConvert unexpectedly overwrote optMtu.value! Got "${elements["optMtu"].value}", expected "1400"`);
+if (elements["optMtu"].value !== "1420") {
+  console.error(`❌ doConvert unexpectedly overwrote optMtu.value! Got "${elements["optMtu"].value}", expected "1420"`);
   process.exit(1);
 }
 console.log("  ✅ doConvert preserves user-typed MTU in optMtu.value!");
 
-// Check that generated JSON in outputPre used the user's MTU 1400, not the file's 1380
-if (!elements["outputPre"].innerHTML.includes("1400")) {
-  console.error(`❌ MTU 1400 was not found in outputPre.innerHTML: ${elements["outputPre"].innerHTML}`);
+// Check that generated JSON in outputJsonPre used the user's MTU 1420
+if (!elements["outputJsonPre"].innerHTML.includes("1420")) {
+  console.error(`❌ MTU 1420 was not found in outputJsonPre.innerHTML: ${elements["outputJsonPre"].innerHTML}`);
   process.exit(1);
 }
-console.log("  ✅ Generated output HTML contains MTU 1400 override!");
+console.log("  ✅ Generated output JSON contains MTU 1420 override!");
 
-// 3. Test file picker reset
+// Check that generated URI in outputUriPre matches wireguard:// schema with tag owner
+const expectedUri = "wireguard://8Mn46OZH7DTRrHPAejXiGZ1Ide%2FGCBawNt6NDHJpfU8%3D@vip.jojo-data.com:46341?address=10.0.0.2%2F32&mtu=1420&publickey=bwanSi8gvcFJkSBbC5K0ED%2FgZ7r8tNq8Twp3YqOigEQ%3D#owner";
+if (!elements["outputUriPre"].textContent.includes(expectedUri)) {
+  console.error(`❌ Generated URI mismatch!\nGot:      ${elements["outputUriPre"].textContent}\nExpected: ${expectedUri}`);
+  process.exit(1);
+}
+console.log("  ✅ Generated WireGuard URI matches user specification exactly!");
+
+// 3. Test View Filter Switching
+console.log("\nTesting View Filter Modes:");
+sandbox.setViewMode("uri");
+if (elements["sectionUri"].style.display !== "flex" || elements["sectionJson"].style.display !== "none") {
+  console.error("❌ setViewMode('uri') did not toggle sections correctly!");
+  process.exit(1);
+}
+console.log("  ✅ setViewMode('uri') shows URI section and hides JSON section");
+
+sandbox.setViewMode("json");
+if (elements["sectionUri"].style.display !== "none" || elements["sectionJson"].style.display !== "flex") {
+  console.error("❌ setViewMode('json') did not toggle sections correctly!");
+  process.exit(1);
+}
+console.log("  ✅ setViewMode('json') shows JSON section and hides URI section");
+
+sandbox.setViewMode("all");
+if (elements["sectionUri"].style.display !== "flex" || elements["sectionJson"].style.display !== "flex") {
+  console.error("❌ setViewMode('all') did not show both sections!");
+  process.exit(1);
+}
+console.log("  ✅ setViewMode('all') displays both URI and JSON sections");
+
+// 4. Test file picker reset
 console.log("\nTesting File Picker Reset:");
 elements["fileInput"].value = "C:\\fakepath\\test.conf";
 sandbox.openFilePicker();

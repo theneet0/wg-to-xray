@@ -197,7 +197,33 @@ for (const ec of errorCases) {
   }
 }
 
+// Test WireGuard URI generation
+console.log("\nTesting WireGuard URI Generation:");
+const userConf = `[Interface]
+PrivateKey = 8Mn46OZH7DTRrHPAejXiGZ1Ide/GCBawNt6NDHJpfU8=
+Address = 10.0.0.2/32
+MTU = 1420
+
+[Peer]
+PublicKey = bwanSi8gvcFJkSBbC5K0ED/gZ7r8tNq8Twp3YqOigEQ=
+Endpoint = vip.jojo-data.com:46341
+`;
+
+const parsedUser = converter.parseWireguardConfig(userConf);
+const uris = converter.buildWireguardUri(parsedUser, { tag: "owner" });
+const expectedUri = "wireguard://8Mn46OZH7DTRrHPAejXiGZ1Ide%2FGCBawNt6NDHJpfU8%3D@vip.jojo-data.com:46341?address=10.0.0.2%2F32&mtu=1420&publickey=bwanSi8gvcFJkSBbC5K0ED%2FgZ7r8tNq8Twp3YqOigEQ%3D#owner";
+
+if (uris[0] === expectedUri) {
+  console.log("  ✅ User example URI matched exactly!");
+} else {
+  console.error("  ❌ User example URI mismatch!");
+  console.error("  Got:     ", uris[0]);
+  console.error("  Expected:", expectedUri);
+  allPassed = false;
+}
+
 if (!allPassed) {
   process.exit(1);
 }
 console.log("\nALL TESTS PASSED WITH 100% PARITY!");
+

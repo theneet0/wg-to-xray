@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WireGuard → Xray Outbound Converter</title>
+  <title>WireGuard → Xray & URI Converter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -26,6 +26,7 @@
       --accent-primary: #ffffff;
       --accent-primary-hover: #e4e4e7;
       --accent-text: #000000;
+      --accent-cyan: #38bdf8;
       
       --success: #34d399;
       --success-bg: rgba(52, 211, 153, 0.1);
@@ -43,7 +44,6 @@
       --radius-full: 9999px;
       
       --shadow-elevation: 0 4px 20px rgba(0, 0, 0, 0.6);
-      --shadow-border: 0 0 0 1px var(--border-subtle);
     }
 
     * {
@@ -200,13 +200,14 @@
     }
 
     .card-header {
-      padding: 1rem 1.25rem;
+      padding: 0.9rem 1.25rem;
       border-bottom: 1px solid var(--border-subtle);
       background: var(--bg-surface-elevated);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
     .card-title {
@@ -449,7 +450,7 @@
     .button-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.65rem;
+      gap: 0.55rem;
       align-items: center;
     }
 
@@ -507,7 +508,55 @@
       font-size: 0.76rem;
     }
 
-    /* Output Area */
+    /* Segmented Control / View Pills */
+    .view-pills {
+      display: inline-flex;
+      background: #050507;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .view-pill {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .view-pill:hover {
+      color: #ffffff;
+    }
+
+    .view-pill.active {
+      background: #27272a;
+      color: #ffffff;
+    }
+
+    /* Output Sections */
+    .output-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .output-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
     .output-container {
       position: relative;
       border-radius: var(--radius-md);
@@ -517,15 +566,30 @@
     }
 
     pre.code-output {
-      padding: 1rem;
+      padding: 0.9rem 1rem;
       font-family: var(--font-mono);
       font-size: 0.82rem;
       line-height: 1.5;
       color: #e4e4e7;
       overflow: auto;
-      max-height: 440px;
-      min-height: 260px;
+      max-height: 380px;
+      min-height: 140px;
       white-space: pre;
+    }
+
+    pre.uri-output {
+      padding: 0.85rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--accent-cyan);
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      word-break: break-all;
+      white-space: pre-wrap;
+      user-select: all;
     }
 
     /* Minimalist Syntax Highlighting */
@@ -655,10 +719,10 @@
         </div>
         <div class="brand-text">
           <h1>
-            WireGuard → Xray Outbound
-            <span class="badge-minimal">Xray-core 26.x</span>
+            WireGuard → Xray & URI Converter
+            <span class="badge-minimal">Xray 26.x</span>
           </h1>
-          <p>Convert WireGuard configurations into Xray outbound JSON format</p>
+          <p>Convert WireGuard configurations into wireguard:// URI links & Xray outbound JSON</p>
         </div>
       </div>
       <div class="header-links">
@@ -737,8 +801,8 @@
           <!-- Options Grid -->
           <div class="options-grid">
             <div class="input-control">
-              <label for="optTag">Tag</label>
-              <input type="text" id="optTag" value="wireguard" placeholder="wireguard">
+              <label for="optTag">Tag / Remark</label>
+              <input type="text" id="optTag" value="owner" placeholder="owner">
             </div>
 
             <div class="input-control">
@@ -769,7 +833,7 @@
             </div>
 
             <div class="options-hint">
-              Note: Reserved bytes are automatically detected and mapped. WireGuard DNS entries are not placed inside outbound settings and trigger an informational note.
+              Note: Reserved bytes are automatically detected. Both wireguard:// URI share links and Xray outbound JSON are generated concurrently.
             </div>
           </div>
 
@@ -777,7 +841,7 @@
           <div class="button-row">
             <button id="convertBtn" class="btn btn-primary" style="flex: 1;">
               <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              Convert to Xray JSON
+              Convert Configuration
             </button>
           </div>
         </div>
@@ -791,24 +855,49 @@
               <polyline points="16 18 22 12 16 6"/>
               <polyline points="8 6 2 12 8 18"/>
             </svg>
-            Xray Outbound JSON
+            Generated Outputs
           </span>
           <div class="button-row">
-            <button id="copyJsonBtn" class="btn btn-secondary btn-sm" title="Copy to clipboard">
-              <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy
-            </button>
-            <button id="downloadJsonBtn" class="btn btn-secondary btn-sm" title="Download JSON file">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download
-            </button>
+            <div class="view-pills">
+              <button id="viewAllBtn" class="view-pill active" title="Show both URI and JSON">All</button>
+              <button id="viewUriBtn" class="view-pill" title="Show only wireguard:// link">URI</button>
+              <button id="viewJsonBtn" class="view-pill" title="Show only Xray JSON">JSON</button>
+            </div>
           </div>
         </div>
 
         <div class="card-body">
-          <!-- JSON Output Box -->
-          <div class="output-container">
-            <pre id="outputPre" class="code-output"><span style="color:var(--text-dim);">// Converted Xray outbound JSON will appear here...</span></pre>
+
+          <!-- WireGuard URI Section -->
+          <div id="sectionUri" class="output-section">
+            <div class="output-section-header">
+              <span>WireGuard Link (wireguard://)</span>
+              <button id="copyUriBtn" class="btn btn-secondary btn-sm" title="Copy URI link to clipboard">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Link
+              </button>
+            </div>
+            <pre id="outputUriPre" class="uri-output"><span style="color:var(--text-dim); user-select:none;">// Generated wireguard:// URI link will appear here...</span></pre>
+          </div>
+
+          <!-- JSON Output Section -->
+          <div id="sectionJson" class="output-section">
+            <div class="output-section-header">
+              <span>Xray Outbound JSON</span>
+              <div class="button-row">
+                <button id="copyJsonBtn" class="btn btn-secondary btn-sm" title="Copy JSON to clipboard">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy JSON
+                </button>
+                <button id="downloadJsonBtn" class="btn btn-secondary btn-sm" title="Download JSON file">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </button>
+              </div>
+            </div>
+            <div class="output-container">
+              <pre id="outputJsonPre" class="code-output"><span style="color:var(--text-dim);">// Converted Xray outbound JSON will appear here...</span></pre>
+            </div>
           </div>
 
           <!-- Messages & Status -->
@@ -823,6 +912,7 @@
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -831,11 +921,11 @@
 
   <div id="toast" class="toast">
     <svg class="icon" style="color:var(--success)" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-    <span id="toastText">JSON copied to clipboard!</span>
+    <span id="toastText">Copied to clipboard!</span>
   </div>
 
   <footer>
-    WireGuard to Xray Outbound Converter
+    WireGuard to Xray Outbound & URI Converter
   </footer>
 
   <script>
@@ -1116,6 +1206,91 @@
       return { config: outbound, warnings };
     }
 
+    function buildWireguardUri(parsed, options = {}) {
+      const {
+        tag = "wireguard",
+        mtuOverride = null,
+      } = options;
+
+      const iface = parsed.interface || {};
+      const peers = parsed.peers || [];
+
+      const privateKey = (iface.privatekey || "").trim();
+      if (!privateKey) {
+        throw new Error("PrivateKey not found in [Interface] section.");
+      }
+      if (peers.length === 0) {
+        throw new Error("No [Peer] section found in WireGuard file.");
+      }
+
+      const addresses = splitCsv(iface.address || "");
+      const mtuSource = (mtuOverride && mtuOverride.trim()) ? mtuOverride.trim() : (iface.mtu || "").trim();
+      let mtuValue = null;
+      if (mtuSource) {
+        mtuValue = parseMtu(mtuSource);
+      }
+
+      let reservedText = iface.reserved || "";
+      if (!reservedText) {
+        for (const peer of peers) {
+          if (peer.reserved) {
+            reservedText = peer.reserved;
+            break;
+          }
+        }
+      }
+      let reservedNums = [];
+      if (reservedText) {
+        reservedNums = parseReserved(reservedText);
+      }
+
+      const uris = [];
+      for (let i = 0; i < peers.length; i++) {
+        const peer = peers[i];
+        const index = i + 1;
+        const publicKey = (peer.publickey || "").trim();
+        const endpoint = (peer.endpoint || "").trim();
+
+        if (!publicKey) {
+          throw new Error(`PublicKey not found in Peer number ${index}.`);
+        }
+        if (!endpoint) {
+          throw new Error(`Endpoint not found in Peer number ${index}.`);
+        }
+
+        const encodedPrivKey = encodeURIComponent(privateKey);
+        const queryParts = [];
+
+        if (addresses.length > 0) {
+          queryParts.push(`address=${encodeURIComponent(addresses.join(","))}`);
+        }
+        if (mtuValue !== null) {
+          queryParts.push(`mtu=${encodeURIComponent(mtuValue)}`);
+        }
+        queryParts.push(`publickey=${encodeURIComponent(publicKey)}`);
+
+        const psk = (peer.presharedkey || "").trim();
+        if (psk) {
+          queryParts.push(`presharedkey=${encodeURIComponent(psk)}`);
+        }
+
+        if (reservedNums.length === 3) {
+          queryParts.push(`reserved=${encodeURIComponent(reservedNums.join(","))}`);
+        }
+
+        const keepaliveText = (peer.persistentkeepalive || "").trim();
+        if (keepaliveText) {
+          queryParts.push(`keepalive=${encodeURIComponent(parseKeepalive(keepaliveText))}`);
+        }
+
+        const peerTag = peers.length > 1 ? `${(tag && tag.trim()) || "wireguard"}-${index}` : ((tag && tag.trim()) || "wireguard");
+        const uri = `wireguard://${encodedPrivKey}@${endpoint}?${queryParts.join("&")}#${encodeURIComponent(peerTag)}`;
+        uris.push(uri);
+      }
+
+      return uris;
+    }
+
     // --- Syntax Highlighter for JSON ---
     function syntaxHighlight(json) {
       if (typeof json !== 'string') {
@@ -1168,15 +1343,26 @@
     const optNoKernelTun = document.getElementById("optNoKernelTun");
     const optWrapOutbounds = document.getElementById("optWrapOutbounds");
 
-    const outputPre = document.getElementById("outputPre");
+    const sectionUri = document.getElementById("sectionUri");
+    const sectionJson = document.getElementById("sectionJson");
+    const outputUriPre = document.getElementById("outputUriPre");
+    const outputJsonPre = document.getElementById("outputJsonPre");
+
+    const copyUriBtn = document.getElementById("copyUriBtn");
     const copyJsonBtn = document.getElementById("copyJsonBtn");
     const downloadJsonBtn = document.getElementById("downloadJsonBtn");
+
+    const viewAllBtn = document.getElementById("viewAllBtn");
+    const viewUriBtn = document.getElementById("viewUriBtn");
+    const viewJsonBtn = document.getElementById("viewJsonBtn");
+
     const messagesList = document.getElementById("messagesList");
     const toast = document.getElementById("toast");
     const toastText = document.getElementById("toastText");
 
     let currentFileName = "";
     let lastGeneratedJson = "";
+    let lastGeneratedUri = "";
 
     function showToast(msg) {
       toastText.textContent = msg;
@@ -1193,10 +1379,32 @@
 
     configText.addEventListener("input", () => {
       updateCharCount();
-      if (lastGeneratedJson) {
+      if (lastGeneratedJson || lastGeneratedUri) {
         doConvert(currentFileName);
       }
     });
+
+    // View filter switching
+    function setViewMode(mode) {
+      [viewAllBtn, viewUriBtn, viewJsonBtn].forEach(b => b.classList.remove("active"));
+      if (mode === "uri") {
+        viewUriBtn.classList.add("active");
+        sectionUri.style.display = "flex";
+        sectionJson.style.display = "none";
+      } else if (mode === "json") {
+        viewJsonBtn.classList.add("active");
+        sectionUri.style.display = "none";
+        sectionJson.style.display = "flex";
+      } else {
+        viewAllBtn.classList.add("active");
+        sectionUri.style.display = "flex";
+        sectionJson.style.display = "flex";
+      }
+    }
+
+    viewAllBtn.addEventListener("click", () => setViewMode("all"));
+    viewUriBtn.addEventListener("click", () => setViewMode("uri"));
+    viewJsonBtn.addEventListener("click", () => setViewMode("json"));
 
     // File input handling
     function openFilePicker() {
@@ -1253,7 +1461,6 @@
         configText.value = content;
         updateCharCount();
 
-        // Update MTU box if file specifies MTU
         try {
           const parsed = parseWireguardConfig(content);
           if (parsed.interface.mtu) {
@@ -1273,18 +1480,17 @@
       loadedFileBadge.style.display = "none";
     });
 
-    // Sample config
+    // Sample config matching user's requested domain and format
     const SAMPLE_CONFIG = `[Interface]
-PrivateKey = yAnz5TF+lXXJTr13wFwYxLzQv8n9v6p1Xy0Z1A2B3C4=
-Address = 10.0.0.2/32, fd00::2/128
+PrivateKey = 8Mn46OZH7DTRrHPAejXiGZ1Ide/GCBawNt6NDHJpfU8=
+Address = 10.0.0.2/32
 DNS = 1.1.1.1, 8.8.8.8
 MTU = 1420
-Reserved = [1, 2, 3]
 
 [Peer]
-PublicKey = bmXE4J8vgEz9dmypCYlhUSxDZITQqde6Set8TeQUuGs=
-Endpoint = 198.51.100.1:51820
-AllowedIPs = 0.0.0.0/0, ::/0
+PublicKey = bwanSi8gvcFJkSBbC5K0ED/gZ7r8tNq8Twp3YqOigEQ=
+Endpoint = vip.jojo-data.com:46341
+AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 `;
 
@@ -1293,6 +1499,7 @@ PersistentKeepalive = 25
       currentFileName = "sample.conf";
       loadedFileName.textContent = "sample.conf";
       loadedFileBadge.style.display = "inline-flex";
+      optTag.value = "owner";
       optMtu.value = "1420";
       updateCharCount();
       doConvert("sample.conf");
@@ -1305,7 +1512,9 @@ PersistentKeepalive = 25
       loadedFileBadge.style.display = "none";
       updateCharCount();
       lastGeneratedJson = "";
-      outputPre.innerHTML = '<span style="color:var(--text-dim);">// Converted Xray outbound JSON will appear here...</span>';
+      lastGeneratedUri = "";
+      outputUriPre.innerHTML = '<span style="color:var(--text-dim); user-select:none;">// Generated wireguard:// URI link will appear here...</span>';
+      outputJsonPre.innerHTML = '<span style="color:var(--text-dim);">// Converted Xray outbound JSON will appear here...</span>';
       messagesList.innerHTML = `<div class="msg-item msg-info">Ready. Select a .conf file or paste configuration to convert.</div>`;
     });
 
@@ -1321,12 +1530,13 @@ PersistentKeepalive = 25
       try {
         const parsed = parseWireguardConfig(text);
 
-        const tag = optTag.value.trim() || "wireguard";
+        const tag = optTag.value.trim() || "owner";
         const domainStrategy = optDomain.value;
         const mtuOverride = optMtu.value.trim();
         const noKernelTun = optNoKernelTun.checked;
         const wrapInOutbounds = optWrapOutbounds.checked;
 
+        // 1. Build Xray Outbound JSON
         const { config, warnings } = buildXrayConfig(parsed, {
           tag,
           domainStrategy,
@@ -1336,12 +1546,23 @@ PersistentKeepalive = 25
         });
 
         lastGeneratedJson = JSON.stringify(config, null, 2);
-        outputPre.innerHTML = syntaxHighlight(lastGeneratedJson);
+        outputJsonPre.innerHTML = syntaxHighlight(lastGeneratedJson);
 
-        renderSuccess(sourceName || "pasted-wireguard.conf", parsed, warnings);
+        // 2. Build WireGuard URI(s)
+        const uris = buildWireguardUri(parsed, {
+          tag,
+          mtuOverride,
+        });
+
+        lastGeneratedUri = uris.join("\n");
+        outputUriPre.textContent = lastGeneratedUri;
+
+        renderSuccess(sourceName || "pasted-wireguard.conf", parsed, warnings, uris.length);
       } catch (err) {
         lastGeneratedJson = "";
-        outputPre.innerHTML = '<span style="color:var(--danger); font-weight:500;">// Error: ' + escapeHtml(err.message) + '</span>';
+        lastGeneratedUri = "";
+        outputUriPre.innerHTML = '<span style="color:var(--danger); font-weight:500;">// Error: ' + escapeHtml(err.message) + '</span>';
+        outputJsonPre.innerHTML = '<span style="color:var(--danger); font-weight:500;">// Error: ' + escapeHtml(err.message) + '</span>';
         showError(err.message);
       }
     }
@@ -1353,7 +1574,7 @@ PersistentKeepalive = 25
     // Live update when options change
     [optDomain, optNoKernelTun, optWrapOutbounds].forEach(el => {
       el.addEventListener("change", () => {
-        if (configText.value.trim() && lastGeneratedJson) {
+        if (configText.value.trim() && (lastGeneratedJson || lastGeneratedUri)) {
           doConvert(currentFileName);
         }
       });
@@ -1361,13 +1582,13 @@ PersistentKeepalive = 25
 
     [optTag, optMtu].forEach(el => {
       el.addEventListener("input", () => {
-        if (configText.value.trim() && lastGeneratedJson) {
+        if (configText.value.trim() && (lastGeneratedJson || lastGeneratedUri)) {
           doConvert(currentFileName);
         }
       });
     });
 
-    function renderSuccess(sourceName, parsed, warnings) {
+    function renderSuccess(sourceName, parsed, warnings, uriCount) {
       const peerCount = (parsed.peers || []).length;
       const ifaceStatus = Object.keys(parsed.interface || {}).length > 0 ? "Found" : "Not found";
 
@@ -1376,7 +1597,7 @@ PersistentKeepalive = 25
           <svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           <div>
             <strong>Conversion successful:</strong> ${escapeHtml(sourceName)}<br>
-            <span style="font-size:0.74rem; opacity:0.85;">Interface: ${escapeHtml(ifaceStatus)} &bull; Peers: ${peerCount}</span>
+            <span style="font-size:0.74rem; opacity:0.85;">Interface: ${escapeHtml(ifaceStatus)} &bull; Peers: ${peerCount} &bull; URIs Generated: ${uriCount}</span>
           </div>
         </div>
       `;
@@ -1405,25 +1626,37 @@ PersistentKeepalive = 25
       `;
     }
 
+    // Copy URI
+    copyUriBtn.addEventListener("click", () => {
+      if (!lastGeneratedUri) {
+        showToast("No WireGuard link to copy. Convert a config first.");
+        return;
+      }
+      copyToClipboard(lastGeneratedUri, "WireGuard URI link copied!");
+    });
+
     // Copy JSON
     copyJsonBtn.addEventListener("click", () => {
       if (!lastGeneratedJson) {
         showToast("No JSON to copy. Convert a config first.");
         return;
       }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(lastGeneratedJson).then(() => {
-          showToast("JSON copied to clipboard!");
-        }).catch(() => {
-          fallbackCopy(lastGeneratedJson);
-        });
-      } else {
-        fallbackCopy(lastGeneratedJson);
-      }
+      copyToClipboard(lastGeneratedJson, "Xray JSON copied!");
     });
 
-    function fallbackCopy(text) {
+    function copyToClipboard(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg);
+        }).catch(() => {
+          fallbackCopy(text, successMsg);
+        });
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.style.position = "fixed";
@@ -1432,7 +1665,7 @@ PersistentKeepalive = 25
       textarea.select();
       try {
         document.execCommand("copy");
-        showToast("JSON copied to clipboard!");
+        showToast(successMsg);
       } catch (err) {
         showToast("Copy failed.");
       }

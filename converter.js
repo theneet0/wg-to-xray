@@ -278,6 +278,91 @@ function buildXrayConfig(parsed, options = {}) {
   return { config: outbound, warnings };
 }
 
+function buildWireguardUri(parsed, options = {}) {
+  const {
+    tag = "wireguard",
+    mtuOverride = null,
+  } = options;
+
+  const iface = parsed.interface || {};
+  const peers = parsed.peers || [];
+
+  const privateKey = (iface.privatekey || "").trim();
+  if (!privateKey) {
+    throw new Error("PrivateKey not found in [Interface] section.");
+  }
+  if (peers.length === 0) {
+    throw new Error("No [Peer] section found in WireGuard file.");
+  }
+
+  const addresses = splitCsv(iface.address || "");
+  const mtuSource = (mtuOverride && mtuOverride.trim()) ? mtuOverride.trim() : (iface.mtu || "").trim();
+  let mtuValue = null;
+  if (mtuSource) {
+    mtuValue = parseMtu(mtuSource);
+  }
+
+  let reservedText = iface.reserved || "";
+  if (!reservedText) {
+    for (const peer of peers) {
+      if (peer.reserved) {
+        reservedText = peer.reserved;
+        break;
+      }
+    }
+  }
+  let reservedNums = [];
+  if (reservedText) {
+    reservedNums = parseReserved(reservedText);
+  }
+
+  const uris = [];
+  for (let i = 0; i < peers.length; i++) {
+    const peer = peers[i];
+    const index = i + 1;
+    const publicKey = (peer.publickey || "").trim();
+    const endpoint = (peer.endpoint || "").trim();
+
+    if (!publicKey) {
+      throw new Error(`PublicKey not found in Peer number ${index}.`);
+    }
+    if (!endpoint) {
+      throw new Error(`Endpoint not found in Peer number ${index}.`);
+    }
+
+    const encodedPrivKey = encodeURIComponent(privateKey);
+    const queryParts = [];
+
+    if (addresses.length > 0) {
+      queryParts.push(`address=${encodeURIComponent(addresses.join(","))}`);
+    }
+    if (mtuValue !== null) {
+      queryParts.push(`mtu=${encodeURIComponent(mtuValue)}`);
+    }
+    queryParts.push(`publickey=${encodeURIComponent(publicKey)}`);
+
+    const psk = (peer.presharedkey || "").trim();
+    if (psk) {
+      queryParts.push(`presharedkey=${encodeURIComponent(psk)}`);
+    }
+
+    if (reservedNums.length === 3) {
+      queryParts.push(`reserved=${encodeURIComponent(reservedNums.join(","))}`);
+    }
+
+    const keepaliveText = (peer.persistentkeepalive || "").trim();
+    if (keepaliveText) {
+      queryParts.push(`keepalive=${encodeURIComponent(parseKeepalive(keepaliveText))}`);
+    }
+
+    const peerTag = peers.length > 1 ? `${(tag && tag.trim()) || "wireguard"}-${index}` : ((tag && tag.trim()) || "wireguard");
+    const uri = `wireguard://${encodedPrivKey}@${endpoint}?${queryParts.join("&")}#${encodeURIComponent(peerTag)}`;
+    uris.push(uri);
+  }
+
+  return uris;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     VALID_DOMAIN_STRATEGIES,
@@ -289,5 +374,7 @@ if (typeof module !== "undefined" && module.exports) {
     parseMtu,
     parseWireguardConfig,
     buildXrayConfig,
+    buildWireguardUri,
   };
 }
+
